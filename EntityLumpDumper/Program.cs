@@ -32,15 +32,17 @@ namespace EntityLumpDumper
             // Detect LZMA header
             if (bytes.Length > 4 && bytes[0] == 0x4C && bytes[1] == 0x5A && bytes[2] == 0x4D && bytes[3] == 0x41)
             {
-                var decoder = new Decoder();
-                // Skip LZMA + actual size + compressed size
-                decoder.SetDecoderProperties(bytes.Skip(12).Take(5).ToArray());
-                
                 var uncompressedSize = BitConverter.ToInt32(bytes, 4);
                 var compressedSize = BitConverter.ToInt32(bytes, 8);
+                
+                var decoder = new Decoder();
 
-                using var inputStream = new MemoryStream(bytes, 17, bytes.Length - 17);
-                using var outStream = new MemoryStream((int)uncompressedSize);
+                // Skip LZMA + actual size + compressed size
+                decoder.SetDecoderProperties(bytes.Skip(12).Take(5).ToArray());
+
+                // Skip entire lzma header
+                using var inputStream = new MemoryStream(bytes, 17, compressedSize);
+                using var outStream = new MemoryStream(uncompressedSize);
 
                 decoder.Code(inputStream, outStream, compressedSize, uncompressedSize, null);
 
